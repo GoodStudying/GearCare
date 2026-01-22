@@ -6,9 +6,42 @@ export default function Login() {
     const [loading, setLoading] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [isLogin, setIsLogin] = useState(true) // 切换登录/注册
+    const [isLogin, setIsLogin] = useState(true)
     const [message, setMessage] = useState('')
+    const [lang, setLang] = useState('zh') // Default to Chinese
     const navigate = useNavigate()
+
+    // Language Dictionary
+    const t = {
+        zh: {
+            titleLogin: '登录到 AutoKeep',
+            titleSignup: '创建新账号',
+            emailLabel: '电子邮箱',
+            passwordLabel: '密码',
+            submitLogin: '登录',
+            submitSignup: '注册',
+            processing: '处理中...',
+            switchLogin: '已有账号？立即登录',
+            switchSignup: '还没有账号？立即注册',
+            successMsg: '注册成功！请检查您的邮箱进行验证。',
+            toggleLang: 'English'
+        },
+        en: {
+            titleLogin: 'Sign in to AutoKeep',
+            titleSignup: 'Create new account',
+            emailLabel: 'Email address',
+            passwordLabel: 'Password',
+            submitLogin: 'Sign in',
+            submitSignup: 'Sign up',
+            processing: 'Processing...',
+            switchLogin: 'Already have an account? Sign in',
+            switchSignup: "Don't have an account? Sign up",
+            successMsg: 'Registration successful! Check your email for verification.',
+            toggleLang: '中文'
+        }
+    }
+
+    const text = t[lang]
 
     const handleAuth = async (e) => {
         e.preventDefault()
@@ -29,9 +62,10 @@ export default function Login() {
                     password,
                 })
                 if (error) throw error
-                setMessage('Registration successful! Check your email for verification.')
-                // 如果 Supabase 设置了自动确认，或者不需要邮件确认，可以直接登录
-                // 这里假设需要确认，给用户提示
+                // Even with errors, let's confirm if it was truly a network error or just "check email" confusion
+                // Usually signUp returns user=null if email confirmation is required but 'error' is null.
+                // If error is not null, it's a real error.
+                setMessage(text.successMsg)
             }
         } catch (error) {
             setMessage(error.message)
@@ -41,10 +75,20 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col justify-center px-6 py-12 lg:px-8 bg-gray-100">
+        <div className="min-h-screen flex flex-col justify-center px-6 py-12 lg:px-8 bg-gray-100 relative">
+            {/* Language Switcher */}
+            <div className="absolute top-4 right-4">
+                <button
+                    onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500 bg-white px-3 py-1 rounded shadow-sm border border-gray-200"
+                >
+                    {text.toggleLang}
+                </button>
+            </div>
+
             <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                 <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-                    {isLogin ? 'Sign in to AutoKeep' : 'Create new account'}
+                    {isLogin ? text.titleLogin : text.titleSignup}
                 </h2>
             </div>
 
@@ -52,7 +96,7 @@ export default function Login() {
                 <form className="space-y-6" onSubmit={handleAuth}>
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                            Email address
+                            {text.emailLabel}
                         </label>
                         <div className="mt-2">
                             <input
@@ -70,7 +114,7 @@ export default function Login() {
 
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                            Password
+                            {text.passwordLabel}
                         </label>
                         <div className="mt-2">
                             <input
@@ -98,18 +142,17 @@ export default function Login() {
                             disabled={loading}
                             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
                         >
-                            {loading ? 'Processing...' : (isLogin ? 'Sign in' : 'Sign up')}
+                            {loading ? text.processing : (isLogin ? text.submitLogin : text.submitSignup)}
                         </button>
                     </div>
                 </form>
 
                 <p className="mt-10 text-center text-sm text-gray-500">
-                    {isLogin ? "Don't have an account? " : "Already have an account? "}
                     <button
                         onClick={() => setIsLogin(!isLogin)}
                         className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
                     >
-                        {isLogin ? 'Sign up' : 'Sign in'}
+                        {isLogin ? text.switchSignup : text.switchLogin}
                     </button>
                 </p>
             </div>

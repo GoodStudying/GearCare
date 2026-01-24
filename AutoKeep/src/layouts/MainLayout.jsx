@@ -14,7 +14,7 @@ export default function MainLayout({ children }) {
         <div className="min-h-screen bg-gray-50 pb-20">
             {/* Top Navigation Bar - Sticky */}
             <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-14">
                         <div className="flex-shrink-0 flex items-center">
                             <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -35,12 +35,18 @@ export default function MainLayout({ children }) {
             </header>
 
             {/* Main Content Area */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-[calc(100vh-160px)]">
                 {children}
             </main>
 
-            {/* Bottom Bar placeholder for future (Tab Bar) */}
-            {/* <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 h-16"></div> */}
+            {/* Simple Footer */}
+            <footer className="bg-white border-t border-gray-200 mt-auto">
+                <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+                    <p className="text-center text-sm text-gray-400">
+                        &copy; {new Date().getFullYear()} AutoKeep. All rights reserved.
+                    </p>
+                </div>
+            </footer>
         </div>
     )
 }

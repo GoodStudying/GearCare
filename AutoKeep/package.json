@@ -2,6 +2,7 @@
   "name": "autokeep",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://GoodStudying.github.io/GearCare",
   "type": "module",
   "scripts": {
     "dev": "vite",

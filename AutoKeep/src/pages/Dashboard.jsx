@@ -1,77 +1,103 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { vehicleService } from '../services/vehicleService'
-import VehicleCard from '../components/VehicleCard'
 import { Link } from 'react-router-dom'
+import { Plus, QrCode, Sparkles } from 'lucide-react'
+import VehicleCard from '../components/VehicleCard'
 
 export default function Dashboard() {
-    const [user, setUser] = useState(null)
-    const [loading, setLoading] = useState(true) // Loading user
+    const [user, setUser] = useState({ email: 'owner@gearcare.local' })
+    const [loading, setLoading] = useState(false)
     const [vehicles, setVehicles] = useState([])
     const [loadingVehicles, setLoadingVehicles] = useState(true)
 
+    // 提供精美的 Mock 数据，保障 UI 呈现
     useEffect(() => {
-        async function loadData() {
-            // Load User
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
-            setLoading(false)
-
-            // Load Vehicles
-            if (user) {
-                try {
-                    const data = await vehicleService.getVehicles()
-                    setVehicles(data)
-                } catch (error) {
-                    console.error("Error loading vehicles:", error)
-                } finally {
-                    setLoadingVehicles(false)
+        setTimeout(() => {
+            setVehicles([
+                {
+                    id: '1',
+                    name: '我的代步宝马',
+                    make: 'BMW',
+                    model: '330i M Sport',
+                    license_plate: '粤B·12345',
+                    current_mileage: 45600,
+                },
+                {
+                    id: '2',
+                    name: '周末越野',
+                    make: 'Jeep',
+                    model: 'Wrangler Rubicon',
+                    license_plate: '粤B·88888',
+                    current_mileage: 120500,
                 }
-            } else {
-                setLoadingVehicles(false)
-            }
-        }
-        loadData()
-    }, [])
+            ]);
+            setLoadingVehicles(false);
+        }, 800);
+    }, []);
 
     if (loading) {
-        return <div className="text-gray-500 text-sm">Loading dashboard...</div>
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+            </div>
+        )
     }
 
     return (
-        <div className="space-y-6">
-            {/* Welcome Section */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900">概览</h2>
-                <p className="text-gray-500 mt-1 text-sm">
-                    欢迎回来, <span className="text-gray-900 font-medium">{user?.email}</span>
-                </p>
+        <div className="space-y-8 animate-fade-in pb-10">
+            {/* 顶层打招呼 */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mt-2">
+                <div>
+                    <p className="text-slate-500 font-medium mb-1">欢迎来到你的数字车库,</p>
+                    <h2 className="text-3xl font-bold font-display tracking-tight text-slate-800">
+                        {user?.email.split('@')[0]}
+                        <Sparkles className="inline-block ml-2 text-brand-500 mb-1" size={24} />
+                    </h2>
+                </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* 快捷操作区 */}
             <div className="grid grid-cols-2 gap-4">
-                <Link to="/add-vehicle" className="flex flex-col items-center justify-center p-4 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition shadow-sm border border-blue-100">
-                    <span className="font-semibold">+ 添加车辆</span>
+                <Link to="/add-vehicle" className="glass-card flex items-center justify-center p-5 group hover:bg-brand-50 transition-all border-brand-100 hover:border-brand-300 hover:shadow-lg shadow-brand-500/5">
+                    <div className="bg-brand-100 p-2 rounded-full text-brand-600 mr-3 group-hover:scale-110 transition-transform">
+                        <Plus size={20} strokeWidth={2.5} />
+                    </div>
+                    <span className="font-semibold text-brand-700 tracking-tight text-sm">增加新车</span>
                 </Link>
-                <button className="flex flex-col items-center justify-center p-4 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition shadow-sm border border-indigo-100">
-                    <span className="font-semibold">扫码记录</span>
+                <button className="glass-card flex items-center justify-center p-5 group hover:bg-slate-50 transition-all border-slate-200 hover:shadow-lg">
+                    <div className="bg-slate-100 p-2 rounded-full text-slate-600 mr-3 group-hover:scale-110 transition-transform">
+                        <QrCode size={20} strokeWidth={2.5} />
+                    </div>
+                    <span className="font-semibold text-slate-700 tracking-tight text-sm">扫描记录单</span>
                 </button>
             </div>
 
-            {/* Vehicle List */}
-            <div>
-                <h3 className="text-md font-medium text-gray-900 mb-3 ml-1">我的车辆</h3>
+            {/* 车辆列表区 */}
+            <div className="pt-2">
+                <div className="flex justify-between items-end mb-4 px-1">
+                    <h3 className="text-xl font-bold font-display text-slate-800">我的车库
+                        <span className="ml-2 text-sm font-medium bg-slate-100 text-slate-500 py-0.5 px-2 rounded-full align-middle">{vehicles.length}</span>
+                    </h3>
+                </div>
+
                 {loadingVehicles ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">加载中...</div>
+                    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                        {[1, 2, 3].map((skeleton) => (
+                            <div key={skeleton} className="glass-card h-48 animate-pulse bg-slate-200/50"></div>
+                        ))}
+                    </div>
                 ) : vehicles.length === 0 ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-                        <p className="text-gray-400 text-sm">暂无车辆数据</p>
-                        <Link to="/add-vehicle" className="text-blue-600 font-medium hover:underline mt-2 inline-block">
-                            立即添加第一辆车
+                    <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-dashed border-2 border-slate-200">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                            <Car className="text-slate-300" size={32} />
+                        </div>
+                        <h4 className="text-lg font-bold text-slate-700 mb-2">你的车库空空如也</h4>
+                        <p className="text-slate-500 text-sm mb-6 max-w-xs">添加你的第一辆爱车，开始智能追踪保养记录与花费。</p>
+                        <Link to="/add-vehicle" className="btn-primary">
+                            立即添加
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 animate-slide-up">
                         {vehicles.map((vehicle) => (
                             <VehicleCard key={vehicle.id} vehicle={vehicle} />
                         ))}

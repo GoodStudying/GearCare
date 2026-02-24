@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, QrCode, Sparkles } from 'lucide-react'
+import { Plus, QrCode, Sparkles, Car } from 'lucide-react'
 import VehicleCard from '../components/VehicleCard'
+import { vehicleService } from '../services/vehicleService'
 
 export default function Dashboard() {
     const [user, setUser] = useState({ email: 'owner@gearcare.local' })
@@ -9,29 +10,28 @@ export default function Dashboard() {
     const [vehicles, setVehicles] = useState([])
     const [loadingVehicles, setLoadingVehicles] = useState(true)
 
-    // 提供精美的 Mock 数据，保障 UI 呈现
     useEffect(() => {
-        setTimeout(() => {
-            setVehicles([
-                {
-                    id: '1',
-                    name: '我的代步宝马',
-                    make: 'BMW',
-                    model: '330i M Sport',
-                    license_plate: '粤B·12345',
-                    current_mileage: 45600,
-                },
-                {
-                    id: '2',
-                    name: '周末越野',
-                    make: 'Jeep',
-                    model: 'Wrangler Rubicon',
-                    license_plate: '粤B·88888',
-                    current_mileage: 120500,
+        let mounted = true
+        async function loadVehicles() {
+            setLoadingVehicles(true)
+            try {
+                const data = await vehicleService.getVehicles()
+                if (mounted) {
+                    setVehicles(data || [])
                 }
-            ]);
-            setLoadingVehicles(false);
-        }, 800);
+            } catch (err) {
+                console.error("Failed to load vehicles from DB:", err)
+            } finally {
+                if (mounted) {
+                    setLoadingVehicles(false)
+                }
+            }
+        }
+        loadVehicles()
+
+        return () => {
+            mounted = false
+        }
     }, []);
 
     if (loading) {

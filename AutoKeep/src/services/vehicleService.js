@@ -1,68 +1,91 @@
+import { supabase } from '../lib/supabase'
+
 export const vehicleService = {
     async getVehicles() {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    {
-                        id: '1',
-                        name: '我的代步宝马',
-                        make: 'BMW',
-                        model: '330i M Sport',
-                        year: 2021,
-                        license_plate: '粤B·12345',
-                        current_mileage: 45600,
-                        daily_avg_km: 38
-                    },
-                    {
-                        id: '2',
-                        name: '周末越野',
-                        make: 'Jeep',
-                        model: 'Wrangler Rubicon',
-                        year: 2019,
-                        license_plate: '粤B·88888',
-                        current_mileage: 120500,
-                        daily_avg_km: 15
-                    }
-                ]);
-            }, 500);
-        });
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return []
+
+        const { data, error } = await supabase
+            .from('autokeep_vehicles')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+
+        if (error) {
+            console.error('获取车辆列表失败:', error)
+            throw error
+        }
+        return data || []
     },
 
     async getVehicleById(id) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(id === '2' ? {
-                    id: '2',
-                    name: '周末越野',
-                    make: 'Jeep',
-                    model: 'Wrangler Rubicon',
-                    year: 2019,
-                    license_plate: '粤B·88888',
-                    current_mileage: 120500,
-                    daily_avg_km: 15
-                } : {
-                    id: '1',
-                    name: '我的代步宝马',
-                    make: 'BMW',
-                    model: '330i M Sport',
-                    year: 2021,
-                    license_plate: '粤B·12345',
-                    current_mileage: 45600,
-                    daily_avg_km: 38
-                });
-            }, 500);
-        });
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return null
+
+        const { data, error } = await supabase
+            .from('autokeep_vehicles')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single()
+
+        if (error) {
+            console.error('获取车辆详情失败:', error)
+            throw error
+        }
+        return data
     },
 
     async addVehicle(vehicleData) {
-        return { id: 'new-id', ...vehicleData };
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('User not logged in')
+
+        const { data, error } = await supabase
+            .from('autokeep_vehicles')
+            .insert([{ ...vehicleData, user_id: user.id }])
+            .select()
+            .single()
+
+        if (error) {
+            console.error('添加车辆失败:', error)
+            throw error
+        }
+        return data
     },
 
     async updateVehicle(id, updates) {
-        return { id, ...updates };
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('User not logged in')
+
+        const { data, error } = await supabase
+            .from('autokeep_vehicles')
+            .update(updates)
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .select()
+            .single()
+
+        if (error) {
+            console.error('更新车辆失败:', error)
+            throw error
+        }
+        return data
     },
 
     async deleteVehicle(id) {
-        return true;
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('User not logged in')
+
+        const { error } = await supabase
+            .from('autokeep_vehicles')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+        if (error) {
+            console.error('删除车辆失败:', error)
+            throw error
+        }
+        return true
     }
-};
+}

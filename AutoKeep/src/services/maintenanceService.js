@@ -1,59 +1,95 @@
+import { supabase } from '../lib/supabase'
+
 export const maintenanceService = {
     async getItems(vehicleId) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    {
-                        id: 'm1',
-                        vehicle_id: vehicleId,
-                        name: '全合成机油更换',
-                        type: 'maintenance',
-                        interval_km: 10000,
-                        interval_months: 12,
-                        last_done_date: '2025-08-15',
-                        last_done_mileage: 38000
-                    },
-                    {
-                        id: 'm2',
-                        vehicle_id: vehicleId,
-                        name: '刹车片检查',
-                        type: 'maintenance',
-                        interval_km: 40000,
-                        interval_months: 24,
-                        last_done_date: '2024-01-10',
-                        last_done_mileage: 20000
-                    }
-                ]);
-            }, 600);
-        });
+        const { data, error } = await supabase
+            .from('autokeep_maintenance_logs')
+            .select('*')
+            .eq('vehicle_id', vehicleId)
+            .eq('log_type', 'maintenance')
+            .order('created_at', { ascending: false })
+
+        if (error) {
+            console.error('Error fetching maintenance items:', error)
+            return []
+        }
+        return data || []
     },
 
     async getLogs(vehicleId) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve([
-                    {
-                        id: 'l1',
-                        vehicle_id: vehicleId,
-                        log_type: 'maintenance',
-                        title: '4万公里大保养',
-                        done_at: '2025-08-15',
-                        mileage: 38000,
-                        cost: 1560.50,
-                        notes: '更换了原厂全合成机油，顺便检查了轮胎磨损。'
-                    },
-                    {
-                        id: 'l2',
-                        vehicle_id: vehicleId,
-                        log_type: 'repair',
-                        title: '更换雨刮器',
-                        done_at: '2025-06-02',
-                        mileage: 36500,
-                        cost: 120,
-                        notes: '博世无骨雨刮，主副驾驶一对。'
-                    }
-                ]);
-            }, 700);
-        });
+        const { data, error } = await supabase
+            .from('autokeep_maintenance_logs')
+            .select('*')
+            .eq('vehicle_id', vehicleId)
+            // if you want both repair and maintenance, don't filter log_type
+            .order('date', { ascending: false })
+
+        if (error) {
+            console.error('Error fetching logs:', error)
+            return []
+        }
+        return data || []
+    },
+
+    async addItem(itemData) {
+        // Prepare the payload for the maintenance_logs table
+        const payload = {
+            ...itemData,
+            log_type: 'maintenance',
+            title: itemData.name || 'New Maintenance Rule',
+            date: new Date().toISOString().split('T')[0],
+            mileage: itemData.last_done_mileage || 0,
+            cost: itemData.cost || 0,
+            notes: itemData.notes || 'Auto-generated preset configuration'
+        };
+        // Remove virtual fields if they don't exist in autokeep_maintenance_logs table 
+        // e.g., interval_km and interval_months are NOT in the SQL above.
+        // I'll put them in notes for now to avoid breaking SQL schema.
+        if (itemData.interval_km || itemData.interval_months) {
+            payload.notes += ` | Interval: ${itemData.interval_km || '?'} km / ${itemData.interval_months || '?'} months`;
+            delete payload.interval_km;
+            delete payload.interval_months;
+            delete payload.last_done_date;
+            delete payload.last_done_mileage;
+            delete payload.name;
+        }
+
+        const { data, error } = await supabase
+            .from('autokeep_maintenance_logs')
+            .insert([payload])
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Error adding maintenance item:', error)
+            throw error
+        }
+        return data
+    },
+
+    async addLog(logData, prefillItemId) {
+        // Prepare the payload for the maintenance_logs table
+        const payload = {
+            vehicle_id: logData.vehicle_id,
+            log_type: logData.log_type,
+            title: logData.item_name,
+            date: logData.done_at,
+            mileage: logData.mileage,
+            cost: logData.cost,
+            notes: logData.notes
+        };
+
+        const { data, error } = await supabase
+            .from('autokeep_maintenance_logs')
+            .insert([payload])
+            .select()
+            .single()
+
+        if (error) {
+            console.error('Error adding log:', error)
+            throw error
+        }
+
+        return data
     }
-};
+}

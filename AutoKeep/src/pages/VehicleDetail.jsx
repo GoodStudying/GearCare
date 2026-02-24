@@ -36,7 +36,7 @@ export default function VehicleDetail() {
     }
 
     const handleRecordLog = (item) => {
-        navigate(`/vehicle/${id}/add-log?itemId=${item.id}&itemName=${encodeURIComponent(item.name)}`)
+        navigate(`/vehicle/${id}/add-log?itemId=${item.id}&itemName=${encodeURIComponent(item.item_name)}`)
     }
 
     if (loading) {

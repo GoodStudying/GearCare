@@ -54,7 +54,7 @@ export default function MaintenanceItem({ item, vehicle, onRecordLog }) {
                         <StatusIcon className="w-5 h-5" strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h4 className={`font-bold tracking-tight ${styles.text}`}>{item.name}</h4>
+                        <h4 className={`font-bold tracking-tight ${styles.text}`}>{item.item_name}</h4>
                         <div className="text-xs font-medium text-slate-500 mt-0.5">
                             周期: {item.interval_km ? `${item.interval_km.toLocaleString()}km` : ''}
                             {item.interval_km && item.interval_months ? ' / ' : ''}

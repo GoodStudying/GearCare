@@ -7,13 +7,42 @@ export const maintenanceService = {
             .select('*')
             .eq('vehicle_id', vehicleId)
             .eq('log_type', 'maintenance')
-            .order('created_at', { ascending: false })
+            .order('date', { ascending: false })
 
         if (error) {
             console.error('Error fetching maintenance items:', error)
             return []
         }
-        return data || []
+
+        // Temporarily group logs by title (item_name) to construct "items" with latest stats
+        const itemMap = new Map();
+
+        (data || []).forEach(row => {
+            const title = row.title;
+            if (!itemMap.has(title)) {
+                itemMap.set(title, {
+                    id: row.id,
+                    item_name: title,
+                    last_done_date: row.date,
+                    last_done_mileage: row.mileage,
+                    interval_km: null,
+                    interval_months: null,
+                    notes: row.notes
+                });
+            }
+
+            // Extract interval config from whichever row has it (usually the first created one)
+            const currentItem = itemMap.get(title);
+            if (row.notes && row.notes.includes('Interval:') && !currentItem.interval_km && !currentItem.interval_months) {
+                const match = row.notes.match(/Interval:\s*([\d\?]+)\s*km\s*\/\s*([\d\?]+)\s*months/);
+                if (match) {
+                    currentItem.interval_km = match[1] === '?' ? null : parseInt(match[1], 10);
+                    currentItem.interval_months = match[2] === '?' ? null : parseInt(match[2], 10);
+                }
+            }
+        });
+
+        return Array.from(itemMap.values());
     },
 
     async getLogs(vehicleId) {

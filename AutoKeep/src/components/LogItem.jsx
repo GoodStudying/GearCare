@@ -8,8 +8,8 @@ export default function LogItem({ log }) {
             {/* 时间线连接点与图标 */}
             <div className="flex flex-col items-center">
                 <div className={`p-2.5 rounded-xl shadow-sm border ${isMaintenance
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'
-                        : 'bg-brand-50 border-brand-100 text-brand-600 group-hover:bg-brand-500 group-hover:text-white'
+                    ? 'bg-emerald-50 border-emerald-100 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'
+                    : 'bg-brand-50 border-brand-100 text-brand-600 group-hover:bg-brand-500 group-hover:text-white'
                     } transition-colors duration-300`}>
                     <Wrench size={18} strokeWidth={2.5} />
                 </div>
@@ -22,7 +22,9 @@ export default function LogItem({ log }) {
                     <h5 className="font-bold text-slate-800 text-base tracking-tight">{log.title}</h5>
                     <div className="flex items-center text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
                         <Calendar size={12} className="mr-1" />
-                        {new Date(log.done_at).toLocaleDateString()}
+                        {log.done_at && !isNaN(new Date(log.done_at).getTime())
+                            ? new Date(log.done_at).toLocaleDateString()
+                            : '未知日期'}
                     </div>
                 </div>
 

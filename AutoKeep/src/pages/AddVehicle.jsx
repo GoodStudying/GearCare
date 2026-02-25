@@ -2,22 +2,38 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { vehicleService } from '../services/vehicleService'
 import { maintenanceService } from '../services/maintenanceService'
-import { CAR_BRANDS } from '../data/carModels'
+import { PlusCircle, ArrowLeft, Car } from 'lucide-react'
 import { MAINTENANCE_PRESETS, DEFAULT_PRESET_NAMES } from '../data/maintenancePresets'
+import { CAR_BRANDS } from '../data/carModels'
+import CarBrandLogo from '../components/CarBrandLogo'
 
 export default function AddVehicle() {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
-    const [addPresets, setAddPresets] = useState(true) // Default to true
+    const [addPresets, setAddPresets] = useState(true)
 
     const [formData, setFormData] = useState({
         name: '',
         make: '',
         model: '',
-        year: new Date().getFullYear(),
+        year: '',
         license_plate: '',
-        current_mileage: 0
+        current_mileage: '',
+        daily_avg_km: '30' // 给一个默认值
     })
+
+    const [metaData, setMetaData] = useState({
+        vin: '',
+        color: '',
+        tire_spec: ''
+    })
+
+    // Compute available models based on selected make
+    const availableModels = useMemo(() => {
+        if (!formData.make) return [];
+        const brand = CAR_BRANDS.find(b => b.name === formData.make);
+        return brand ? brand.models : [];
+    }, [formData.make]);
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -25,26 +41,34 @@ export default function AddVehicle() {
             ...prev,
             [name]: value
         }))
+        // If make changes, don't automatically clear model, let user decide or keep custom input
     }
 
-    // Get available models based on selected make
-    const availableModels = useMemo(() => {
-        const brand = CAR_BRANDS.find(b => b.name === formData.make || b.name.includes(formData.make));
-        return brand ? brand.models : [];
-    }, [formData.make]);
+    const handleMetaChange = (e) => {
+        const { name, value } = e.target
+        const finalValue = name === 'vin' ? value.toUpperCase() : value;
+        setMetaData(prev => ({ ...prev, [name]: finalValue }))
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
+
         try {
-            // 1. Create Vehicle
+            // 提交基础车辆信息
             const newVehicle = await vehicleService.addVehicle({
                 ...formData,
-                year: parseInt(formData.year),
-                current_mileage: parseInt(formData.current_mileage)
+                year: formData.year ? parseInt(formData.year) : null,
+                current_mileage: parseInt(formData.current_mileage),
+                daily_avg_km: parseInt(formData.daily_avg_km)
             })
 
-            // 2. Add Default Presets if selected
+            // 提交车辆扩展信息
+            if (newVehicle && newVehicle.id) {
+                await maintenanceService.saveVehicleMeta(newVehicle.id, metaData).catch(console.error);
+            }
+
+            // 添加默认保养预设
             if (addPresets && newVehicle && newVehicle.id) {
                 const presetsToAdd = MAINTENANCE_PRESETS.filter(p => DEFAULT_PRESET_NAMES.includes(p.name));
 
@@ -69,138 +93,205 @@ export default function AddVehicle() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">添加车辆</h1>
-
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
-
-                {/* 昵称 */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">车辆昵称 *</label>
-                    <input
-                        type="text"
-                        name="name"
-                        required
-                        placeholder="例如：上班代步车"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    />
+        <div className="max-w-2xl mx-auto animate-fade-in pb-12">
+            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center text-slate-500 hover:text-slate-900 font-bold transition-colors group tracking-tight mb-6"
+            >
+                <div className="bg-white p-2.5 rounded-[14px] border border-slate-100 shadow-sm mr-3 group-hover:border-slate-300 transition-colors group-active:scale-95">
+                    <ArrowLeft size={18} strokeWidth={2.5} />
                 </div>
+                返回
+            </button>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* 品牌 (Datalist for Searchable) */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">品牌 *</label>
+            <div className="mb-8">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-xs font-bold tracking-widest uppercase mb-3 border border-brand-100">
+                    <Car size={12} className="text-brand-500 fill-brand-500/20" strokeWidth={3} />
+                    New Vehicle
+                </div>
+                <h1 className="text-3xl font-bold font-display text-slate-800 tracking-tight">添加新车辆</h1>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* 基础信息 */}
+                <div className="glass-card p-6 md:p-8 space-y-6">
+                    <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">基本档案</h3>
+                    {/* 昵称 */}
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-bold text-slate-700 ml-1">车辆昵称 <span className="text-rose-500">*</span></label>
                         <input
                             type="text"
-                            name="make"
+                            name="name"
                             required
-                            list="car-brands"
-                            placeholder="输入或选择品牌"
-                            value={formData.make}
+                            placeholder="例如：家里的大白"
+                            value={formData.name}
                             onChange={handleChange}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                            className="input-soft"
                         />
-                        <datalist id="car-brands">
-                            {CAR_BRANDS.map(brand => (
-                                <option key={brand.name} value={brand.name} />
-                            ))}
-                        </datalist>
                     </div>
 
-                    {/* 型号 (Datalist dependent on Brand) */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">型号 *</label>
-                        <input
-                            type="text"
-                            name="model"
-                            required
-                            list="car-models"
-                            placeholder="输入或选择型号"
-                            value={formData.model}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        />
-                        <datalist id="car-models">
-                            {availableModels.map(model => (
-                                <option key={model} value={model} />
-                            ))}
-                        </datalist>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* 品牌 */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">品牌 <span className="text-rose-500">*</span></label>
+                            <div className="relative">
+                                {formData.make && (
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden">
+                                        <CarBrandLogo make={formData.make} size={22} />
+                                    </div>
+                                )}
+                                <input
+                                    type="text"
+                                    name="make"
+                                    required
+                                    list="car-brands"
+                                    placeholder="输入或选择品牌"
+                                    value={formData.make}
+                                    onChange={handleChange}
+                                    className={`input-soft ${formData.make ? 'pl-12' : ''}`}
+                                />
+                            </div>
+                            <datalist id="car-brands">
+                                {CAR_BRANDS.map(brand => (
+                                    <option key={brand.name} value={brand.name} />
+                                ))}
+                            </datalist>
+                        </div>
+
+                        {/* 型号 */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">型号 <span className="text-rose-500">*</span></label>
+                            <input
+                                type="text"
+                                name="model"
+                                required
+                                list="car-models"
+                                placeholder="输入或选择型号"
+                                value={formData.model}
+                                onChange={handleChange}
+                                className="input-soft"
+                            />
+                            <datalist id="car-models">
+                                {availableModels.map(model => (
+                                    <option key={model} value={model} />
+                                ))}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* 年份 */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">年份 <span className="text-xs text-slate-400 font-normal ml-1">(选填)</span></label>
+                            <input
+                                type="number"
+                                name="year"
+                                placeholder="如 2023"
+                                value={formData.year}
+                                onChange={handleChange}
+                                className="input-soft"
+                            />
+                        </div>
+
+                        {/* 车牌 */}
+                        <div className="md:col-span-2 space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">车牌号 <span className="text-xs text-slate-400 font-normal ml-1">(选填)</span></label>
+                            <input
+                                type="text"
+                                name="license_plate"
+                                placeholder="如 粤A·88888"
+                                value={formData.license_plate}
+                                onChange={handleChange}
+                                className="input-soft uppercase"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* 当前里程 */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">当前里程 <span className="text-xs text-slate-400 font-medium">(km)</span> <span className="text-rose-500">*</span></label>
+                            <input
+                                type="number"
+                                name="current_mileage"
+                                required
+                                placeholder="表显公里数"
+                                value={formData.current_mileage}
+                                onChange={handleChange}
+                                className="input-soft"
+                            />
+                        </div>
+
+                        {/* 日均里程 */}
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">日均行驶估计 <span className="text-xs text-slate-400 font-medium">(km/天)</span> <span className="text-rose-500">*</span></label>
+                            <input
+                                type="number"
+                                name="daily_avg_km"
+                                required
+                                placeholder="默认30"
+                                value={formData.daily_avg_km}
+                                onChange={handleChange}
+                                className="input-soft"
+                            />
+                            <p className="text-[11px] font-bold text-slate-400 mt-1.5 ml-1 tracking-wider">APP通过此数据推算下次保养时间</p>
+                        </div>
+                    </div>
+
+                    {/* 快捷添加预设 */}
+                    <div className="pt-2">
+                        <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-[1.25rem] cursor-pointer group hover:bg-white hover:border-slate-200 transition-colors">
+                            <div className="relative w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all group-hover:after:scale-95">
+                                <input
+                                    type="checkbox"
+                                    checked={addPresets}
+                                    onChange={(e) => setAddPresets(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-full h-full rounded-full transition-colors peer-checked:bg-brand-500"></div>
+                            </div>
+                            <div>
+                                <span className="text-sm font-bold text-slate-800 block mb-0.5">自动创建常用保养项目库</span>
+                                <span className="text-xs font-medium text-slate-500">机油、机滤、空滤等默认周期</span>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* 年份 */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">年份</label>
-                        <input
-                            type="number"
-                            name="year"
-                            value={formData.year}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        />
+                {/* 扩展详情区块 */}
+                <div className="glass-card p-6 md:p-8 space-y-6">
+                    <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">扩展档案 <span className="text-xs text-slate-400 font-medium ml-2 font-normal">(选填)</span></h3>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-bold text-slate-700 ml-1">车辆识别代号 (VIN/车架号)</label>
+                        <input type="text" name="vin" placeholder="17位代码，见行驶证" value={metaData.vin} onChange={handleMetaChange} maxLength={17} className="input-soft font-mono uppercase tracking-widest text-[15px]" />
                     </div>
-
-                    {/* 车牌 */}
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">车牌号</label>
-                        <input
-                            type="text"
-                            name="license_plate"
-                            placeholder="苏A 88888"
-                            value={formData.license_plate}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">车身颜色</label>
+                            <input type="text" name="color" placeholder="如：珍珠白" value={metaData.color} onChange={handleMetaChange} className="input-soft" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 ml-1">轮胎规格</label>
+                            <input type="text" name="tire_spec" placeholder="如：225/55 R18" value={metaData.tire_spec} onChange={handleMetaChange} className="input-soft" />
+                        </div>
                     </div>
                 </div>
 
-                {/* 当前里程 */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">当前里程 (km)</label>
-                    <input
-                        type="number"
-                        name="current_mileage"
-                        required
-                        value={formData.current_mileage}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    />
-                </div>
-
-                {/* 自动导入规则选项 */}
-                <div className="bg-blue-50 p-4 rounded-lg flex items-start">
-                    <div className="flex items-center h-5">
-                        <input
-                            id="presets"
-                            type="checkbox"
-                            checked={addPresets}
-                            onChange={(e) => setAddPresets(e.target.checked)}
-                            className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                        />
-                    </div>
-                    <div className="ml-3 text-sm">
-                        <label htmlFor="presets" className="font-medium text-blue-900">自动添加常用保养规则</label>
-                        <p className="text-blue-700">将会自动为您创建机油、滤芯、刹车油等5项最常用的保养提醒。</p>
-                    </div>
-                </div>
-
-                <div className="pt-4 flex gap-4">
+                <div className="pt-6 grid grid-cols-2 gap-4">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
-                        className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
+                        className="px-6 py-4 text-slate-600 bg-slate-100 rounded-[1.25rem] hover:bg-slate-200 transition-all font-bold tracking-wide active:scale-95"
                     >
                         取消
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition font-medium shadow-md disabled:opacity-50"
+                        className="btn-primary py-4 rounded-[1.25rem] disabled:opacity-50 disabled:shadow-none w-full flex items-center justify-center gap-2"
                     >
-                        {loading ? '保存中...' : '保存车辆'}
+                        {loading ? '创建中...' : <><PlusCircle size={18} strokeWidth={2.5} /> 完成添加</>}
                     </button>
                 </div>
 

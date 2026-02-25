@@ -6,10 +6,10 @@
 
 @layer base {
   body {
-    @apply bg-surface-50 text-slate-900 font-sans antialiased;
-    /* Optional sleek background pattern */
-    background-image: radial-gradient(circle at top right, rgba(14, 165, 233, 0.05), transparent 40%),
-                      radial-gradient(circle at bottom left, rgba(2, 132, 199, 0.05), transparent 40%);
+    @apply bg-surface-100 text-slate-800 font-sans antialiased;
+    /* Soft, bright ambient background */
+    background-image: radial-gradient(circle at 15% 50%, rgba(20, 184, 166, 0.08), transparent 50%),
+                      radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.08), transparent 50%);
     background-attachment: fixed;
   }
 
@@ -19,18 +19,18 @@
 }
 
 @layer components {
-  /* Premium Glassmorphism Card Style */
+  /* Crisp, bright card style */
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl;
+    @apply bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-[1.5rem] overflow-hidden;
   }
   
-  /* Smooth Button Style */
+  /* Smooth Button Style - highly rounded */
   .btn-primary {
-    @apply bg-brand-600 text-white font-medium px-6 py-2.5 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-brand-500 transition-all active:scale-95;
+    @apply bg-brand-600 text-white font-semibold flex items-center justify-center px-6 py-3.5 rounded-2xl shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40 hover:-translate-y-0.5 hover:bg-brand-500 transition-all active:scale-95;
   }
 
   /* Soft Input Style */
   .input-soft {
-    @apply w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-slate-400;
+    @apply w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:bg-white focus:ring-[3px] focus:ring-brand-500/20 focus:border-brand-400 transition-all placeholder:text-slate-400 text-slate-800 font-medium;
   }
 }

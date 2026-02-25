@@ -6,6 +6,7 @@ import AddVehicle from './pages/AddVehicle'
 import VehicleDetail from './pages/VehicleDetail'
 import AddMaintenanceItem from './pages/AddMaintenanceItem'
 import AddMaintenanceLog from './pages/AddMaintenanceLog'
+import AddRefuelLog from './pages/AddRefuelLog'
 import EditVehicle from './pages/EditVehicle'
 import Login from './pages/Login'
 
@@ -26,7 +27,9 @@ function App() {
                   <Route path="/add-vehicle" element={<AddVehicle />} />
                   <Route path="/vehicle/:id" element={<VehicleDetail />} />
                   <Route path="/vehicle/:id/add-rule" element={<AddMaintenanceItem />} />
+                  <Route path="/vehicle/:id/edit-rule/:itemId" element={<AddMaintenanceItem />} />
                   <Route path="/vehicle/:id/add-log" element={<AddMaintenanceLog />} />
+                  <Route path="/vehicle/:id/add-refuel" element={<AddRefuelLog />} />
                   <Route path="/vehicle/:id/edit" element={<EditVehicle />} />
                 </Routes>
               </MainLayout>
